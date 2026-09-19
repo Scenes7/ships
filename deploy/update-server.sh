@@ -8,7 +8,7 @@ export AWS_REGION=${AWS_REGION:-us-east-1}
 ID=$(aws cloudformation describe-stacks --stack-name "$STACK" \
   --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)
 CMD=$(aws ssm send-command --instance-ids "$ID" --document-name AWS-RunShellScript \
-  --parameters 'commands=["cd /opt/tanks/app && sudo -u tanks git pull --ff-only && cd server && sudo -u tanks npm ci --omit=dev && systemctl restart tanks"]' \
+  --parameters 'commands=["cd /opt/tanks/app && sudo -u tanks git fetch origin && sudo -u tanks git reset --hard origin/main && cd server && sudo -u tanks npm ci --omit=dev && systemctl restart tanks"]' \
   --query Command.CommandId --output text)
 aws ssm wait command-executed --command-id "$CMD" --instance-id "$ID" || true
 aws ssm get-command-invocation --command-id "$CMD" --instance-id "$ID" \

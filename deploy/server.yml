@@ -63,6 +63,10 @@ Resources:
           - |
             #!/bin/bash
             set -euxo pipefail
+            # 512 MB instances run out of memory during dnf/npm without swap.
+            dd if=/dev/zero of=/swapfile bs=1M count=1024
+            chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+            echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
             dnf install -y nodejs git tar
 
             # Caddy terminates TLS (Let's Encrypt) so browsers on GitHub Pages can use wss://
@@ -90,6 +94,7 @@ Resources:
             Environment=PORT=8080
             ExecStart=/usr/bin/node index.js
             Restart=always
+            RestartSec=2
             [Install]
             WantedBy=multi-user.target
             UNIT
@@ -102,6 +107,7 @@ Resources:
             Environment=XDG_DATA_HOME=/var/lib/caddy
             ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile
             Restart=always
+            RestartSec=2
             [Install]
             WantedBy=multi-user.target
             UNIT
