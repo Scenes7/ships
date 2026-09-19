@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tank Duel</title>
+  <link rel="icon" href="assets/blueTank.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="menu" class="screen">
+    <div class="card">
+      <h1>Tank Duel</h1>
+      <p class="sub">1 v 1 · best of 5</p>
+      <form id="join-form">
+        <label for="name">Your name</label>
+        <input id="name" maxlength="16" autocomplete="off" placeholder="Player" required>
+        <button type="submit" id="play">Play</button>
+      </form>
+      <p id="menu-status" class="status" role="status"></p>
+    </div>
+  </section>
+
+  <section id="queue" class="screen hidden">
+    <div class="card">
+      <h2>Waiting for an opponent…</h2>
+      <p class="sub">You'll be matched with the next player who presses Play.</p>
+      <button id="cancel-queue" class="secondary">Cancel</button>
+    </div>
+  </section>
+
+  <section id="game" class="screen hidden">
+    <header id="scoreboard"></header>
+    <div id="stage">
+      <canvas id="canvas"></canvas>
+      <div id="overlay" class="hidden"></div>
+    </div>
+    <footer id="hud">
+      <div class="bar-row"><span class="bar-label">Health</span><div class="bar"><div id="hp-fill" class="fill hp"></div><div id="hp-ticks" class="ticks"></div></div></div>
+      <div class="bar-row"><span class="bar-label">Ammo</span><div class="bar"><div id="ammo-fill" class="fill ammo"></div><div id="ammo-ticks" class="ticks"></div></div></div>
+    </footer>
+  </section>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

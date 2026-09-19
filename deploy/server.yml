@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Tank Duel game server - one small EC2 instance running Node + Caddy (auto HTTPS via sslip.io).
+
+Parameters:
+  RepoUrl:
+    Type: String
+    Default: https://github.com/Scenes7/ships.git
+    Description: Public git repo the server code is cloned from.
+  Branch:
+    Type: String
+    Default: main
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+    Description: t4g.nano (~$3/mo) is plenty for dozens of concurrent duels. Must be an arm64 (Graviton) type.
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Tank Duel - HTTP (TLS certificate challenge) and HTTPS/WSS
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0 }
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }
+
+  # Lets `update-server.sh` push new code via SSM Run Command (no SSH keys needed).
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref Role]
+
+  IP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds: [!GetAtt SecurityGroup.GroupId]
+      Tags:
+        - { Key: Name, Value: tank-duel-server }
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash
+            set -euxo pipefail
+            dnf install -y nodejs git tar
+
+            # Caddy terminates TLS (Let's Encrypt) so browsers on GitHub Pages can use wss://
+            curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_arm64.tar.gz \
+              | tar -xz -C /usr/local/bin caddy
+
+            useradd --system --create-home --home-dir /opt/tanks tanks
+            sudo -u tanks git clone --branch ${Branch} ${RepoUrl} /opt/tanks/app
+            cd /opt/tanks/app/server && sudo -u tanks npm ci --omit=dev
+
+            mkdir -p /etc/caddy /var/lib/caddy
+            cat > /etc/caddy/Caddyfile <<CADDY
+            ${Host} {
+              reverse_proxy localhost:8080
+            }
+            CADDY
+
+            cat > /etc/systemd/system/tanks.service <<UNIT
+            [Unit]
+            Description=Tank Duel game server
+            After=network-online.target
+            [Service]
+            User=tanks
+            WorkingDirectory=/opt/tanks/app/server
+            Environment=PORT=8080
+            ExecStart=/usr/bin/node index.js
+            Restart=always
+            [Install]
+            WantedBy=multi-user.target
+            UNIT
+
+            cat > /etc/systemd/system/caddy.service <<UNIT
+            [Unit]
+            Description=Caddy
+            After=network-online.target
+            [Service]
+            Environment=XDG_DATA_HOME=/var/lib/caddy
+            ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile
+            Restart=always
+            [Install]
+            WantedBy=multi-user.target
+            UNIT
+
+            systemctl daemon-reload
+            systemctl enable --now tanks caddy
+          - Host: !Join ['', [!Join ['-', !Split ['.', !Ref IP]], '.sslip.io']]
+
+  IPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt IP.AllocationId
+      InstanceId: !Ref Instance
+
+Outputs:
+  ServerUrl:
+    Description: Put this in client/config.js (deploy.sh does it for you).
+    Value: !Join ['', ['wss://', !Join ['-', !Split ['.', !Ref IP]], '.sslip.io']]
+  HealthCheck:
+    Value: !Join ['', ['https://', !Join ['-', !Split ['.', !Ref IP]], '.sslip.io/']]
+  InstanceId:
+    Value: !Ref Instance

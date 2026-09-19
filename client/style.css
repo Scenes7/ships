@@ -1,0 +1,72 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f2f2f2;
+  color: #111;
+  overflow: hidden;
+}
+.hidden { display: none !important; }
+.screen { height: 100%; display: flex; }
+
+#menu, #queue { align-items: center; justify-content: center; padding: 16px; }
+.card {
+  background: #fff;
+  border: 3px solid #000;
+  padding: 28px 32px;
+  width: min(380px, 100%);
+  text-align: center;
+}
+h1 { margin: 0 0 4px; font-size: 2.2rem; letter-spacing: 0.02em; }
+h2 { margin: 0 0 8px; font-size: 1.3rem; }
+.sub { margin: 0 0 20px; color: #555; }
+form { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+label { font-weight: 600; font-size: 0.9rem; }
+input {
+  font: inherit; padding: 10px 12px; border: 2px solid #000; border-radius: 0;
+}
+button {
+  font: inherit; font-weight: 700; padding: 10px 18px; margin-top: 8px;
+  background: #000; color: #fff; border: 2px solid #000; cursor: pointer;
+}
+button:hover { background: #333; }
+button.secondary { background: #fff; color: #000; }
+button.secondary:hover { background: #eee; }
+button:disabled { opacity: 0.5; cursor: default; }
+.status { min-height: 1.2em; margin: 14px 0 0; color: #b00020; }
+
+#game { flex-direction: column; align-items: center; padding: 8px 16px; gap: 8px; }
+#scoreboard {
+  display: flex; align-items: center; gap: 16px; font-weight: 700; font-size: 1.1rem;
+  flex-wrap: wrap; justify-content: center;
+}
+#scoreboard .score { font-variant-numeric: tabular-nums; font-size: 1.4rem; }
+#scoreboard .round { font-weight: 500; color: #555; font-size: 0.95rem; }
+.swatch { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; }
+
+#stage { position: relative; flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+#canvas { display: block; background: #fff; }
+#overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+#overlay .panel {
+  pointer-events: auto; background: rgba(255, 255, 255, 0.95); border: 3px solid #000;
+  padding: 20px 28px; text-align: center; max-width: min(520px, 92%);
+}
+#overlay .big { font-size: 3rem; font-weight: 800; line-height: 1; margin: 8px 0; font-variant-numeric: tabular-nums; }
+#overlay table { margin: 10px auto; border-collapse: collapse; text-align: left; }
+#overlay td { padding: 3px 10px; }
+#overlay td:first-child { font-weight: 700; white-space: nowrap; }
+kbd { border: 1.5px solid #000; border-bottom-width: 3px; padding: 0 5px; font-family: inherit; font-size: 0.85em; background: #fff; }
+
+#hud { width: min(640px, 100%); display: flex; flex-direction: column; gap: 6px; padding-bottom: 4px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { width: 56px; font-weight: 700; font-size: 0.85rem; }
+.bar { position: relative; flex: 1; height: 18px; border: 2px solid #000; background: #fff; }
+.fill { height: 100%; width: 0; }
+.fill.hp { background: #e53935; }
+.fill.ammo { background: #fdd835; }
+.ticks { position: absolute; inset: 0; display: flex; pointer-events: none; }
+.ticks span { flex: 1; border-right: 2px solid #000; }
+.ticks span:last-child { border-right: 0; }
