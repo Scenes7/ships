@@ -30,9 +30,15 @@ function connect() {
   return new Promise((resolve, reject) => {
     if (ws && ws.readyState === WebSocket.OPEN) return resolve(ws);
     const sock = new WebSocket(SERVER_URL);
-    sock.onopen = () => { ws = sock; resolve(sock); };
+    let keepalive;
+    sock.onopen = () => {
+      ws = sock;
+      keepalive = setInterval(() => send({ t: 'ping' }), 15000); // server drops silent sockets
+      resolve(sock);
+    };
     sock.onerror = () => reject(new Error('Could not reach the game server.'));
     sock.onclose = () => {
+      clearInterval(keepalive);
       if (ws !== sock) return;
       ws = null;
       const wasPlaying = game && !game.over;
